@@ -69,6 +69,10 @@ impl Future for ConnectingInstance {
                 }
                 Err(err) if err.kind() == ErrorKind::WouldBlock => {
                     *self = Self::Connecting(pipe);
+                    // arrange for it to be polled again,
+                    // otherwise an `await` on this future
+                    // will never call this code again
+                    cx.waker().wake_by_ref();
                     Poll::Pending
                 }
                 Err(err) => Poll::Ready(Err(err)),
